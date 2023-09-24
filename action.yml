@@ -1,0 +1,70 @@
+name: Terragrunt
+description: Runs Terragrunt
+author: userbradley
+
+inputs:
+  directory:
+    description: Location of the Terragrunt to run
+    required: true
+  serviceAccount:
+    description: Email address of the service account to use to deploy terraform
+    required: true
+  providerFileLocation:
+    description: Location of the provider.tf file
+    required: true
+  sshPrivateKey:
+    description: Private SSH Key used to access the repo. Should be a new one per instance
+    required: false
+  dryRun:
+    description: Puts the Workflow in Dry Run mode and does not apply any configuration
+    default: false
+  sensitive:
+    description: Should the Workload Identity provider use the Sensitive Pool
+    default: false
+    required: false
+
+runs:
+  using: composite
+  steps:
+
+    - name: Install Terraform
+      uses: userbradley/action-install-terraform@v1.0.0
+      with:
+        providerFileLocation: ${{ inputs.providerFileLocation }}
+
+    - name: Install Terragrunt
+      uses: userbradley/actions-install-terragrunt@v1.0.0
+
+    - name: Terragrunt Init
+      working-directory: ${{ inputs.directory }}
+      shell: bash
+      env:
+        SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+      run: |
+        if [[ -z "${{ inputs.sshPrivateKey }}" ]]; then
+          terragrunt run-all init -upgrade
+        else
+        ssh-agent -a /tmp/ssh_agent.sock > /dev/null
+        ssh-add - <<< '${{ inputs.sshPrivateKey }}'
+          terragrunt run-all init -upgrade
+        fi
+
+    - name: Terragrunt Validate
+      shell: sh
+      working-directory: ${{ inputs.directory }}
+      run: terragrunt run-all validate
+
+    - name: Terragrunt Plan
+      shell: sh
+      working-directory: ${{ inputs.directory }}
+      run: terragrunt run-all plan
+
+    - name: Terragrunt Apply
+      shell: bash
+      working-directory: ${{ inputs.directory }}
+      run: |
+        if [[ ${{ inputs.dryRun}} == true ]]; then
+          echo "Pipeline is currently in Dry Run mode. No config will be applied"
+        else
+          terragrunt run-all apply --terragrunt-non-interactive
+        fi
