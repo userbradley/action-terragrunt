@@ -28,7 +28,7 @@ runs:
   steps:
 
     - name: Install Terraform
-      uses: userbradley/action-install-terraform@v1.0.0
+      uses: userbradley/action-install-terraform@v1.1.0
       with:
         providerFileLocation: ${{ inputs.providerFileLocation }}
 
