@@ -33,7 +33,7 @@ runs:
         providerFileLocation: ${{ inputs.providerFileLocation }}
 
     - name: Install Terragrunt
-      uses: userbradley/actions-install-terragrunt@v1.1.0
+      uses: userbradley/actions-install-terragrunt@v1.1.1
 
     - name: Terragrunt Init
       working-directory: ${{ inputs.directory }}
